@@ -3,7 +3,7 @@ const {parse} = require('csv-parse');
 const { promisify } = require('util');
 
 const config = require('../app-config.json');
-const {insertDataIntoPostgres} = require('../models/users');
+const {insertDataIntoPostgres, fetchDataAndGroupByAge} = require('../models/users');
 
 const readFileAsync = promisify(fs.readFile);
 const parseAsync = promisify(parse);
@@ -14,6 +14,7 @@ exports.toJson = async(req, res, next) => {
         const csvData = [];
         let result = await csvToJson(config.filelocation);
         await insertToPostGres(result[1]);
+        await getAgePercentageDistribution();
         res.json(result[0]);
     } catch (error) {
         console.log(error);
@@ -78,4 +79,9 @@ async function insertToPostGres(result) {
     await insertDataIntoPostgres(val)
   })
   return 1;
+}
+
+async function getAgePercentageDistribution() {
+  const result = await fetchDataAndGroupByAge()
+  console.log(result);
 }

@@ -22,4 +22,52 @@ async function insertDataIntoPostgres(jsonData) {
     }
 }
 
-module.exports = {insertDataIntoPostgres}
+async function fetchAndCalculatePercentageAgeDistribution() {
+    const client = await pool.connect();
+  
+    try {
+      const tableName = 'users';
+  
+      const result = await client.query(`SELECT * FROM ${tableName}`);
+  
+      const totalRecords = result.rows.length;
+  
+      const ageGroups = {
+        "<20": 0,
+        "20-40": 0,
+        "40-60": 0,
+        ">60": 0
+      };
+  
+      result.rows.forEach(row => {
+        const age = row.age;   
+        if (age < 20) {
+          ageGroups["<20"]++;
+        } else if (age >= 20 && age <= 40) {
+          ageGroups["20-40"]++;
+        } else if (age > 40 && age <= 60) {
+          ageGroups["40-60"]++;
+        } else {
+          ageGroups[">60"]++;
+        }
+      });
+  
+      const percentageAgeGroups = {};
+      Object.keys(ageGroups).forEach(group => {
+        percentageAgeGroups[group] = (ageGroups[group] / totalRecords) * 100;
+      });
+  
+      return percentageAgeGroups;
+    } catch (error) {
+      console.error('Error fetching and calculating percentage age distribution from PostgreSQL:', error);
+      throw new Error('Error fetching and calculating percentage age distribution from PostgreSQL');
+    } finally {
+      client.release();
+    }
+  }
+  
+
+module.exports = {
+    insertDataIntoPostgres: insertDataIntoPostgres,
+    fetchDataAndGroupByAge : fetchAndCalculatePercentageAgeDistribution
+ }
